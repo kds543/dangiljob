@@ -1,0 +1,471 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "HTTP://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.DG.dangil1009.commonMapper">
+	<!-- delete from user_info where row_id -->
+	<select id="Login" parameterType="hashMap" resultType="hashMap">
+		select * from user where user_id = #{user_id} and user_pwd = password(#{user_pwd})
+	</select>
+	<select id="idCheck" parameterType="hashMap" resultType="hashMap">
+		select count(*) as cnt from user where user_id = #{user_id}
+	</select>
+	<select id="deviceTokenCheck" parameterType="hashMap" resultType="hashMap">
+		select count(*) as cnt from user where user_id = #{id} and token = #{token}
+	</select>
+	<update id="deviceTokenUpdate" parameterType="hashMap">
+		update `user`
+		set token = #{token}
+		where user_id = #{id}
+	</update>
+	<insert id="addMember" parameterType="hashMap" useGeneratedKeys="true" keyProperty="seq">
+		insert into `user`
+		(user_id , user_pwd , `type` , name , sigungu ,  address , address_detail , location_addr , lon,lat , phone_number , email , regident_reg,create_date,img1 , img2,jobtype,gender,country)
+		values
+		(#{user_id} , password(#{user_pwd}) , #{type} , #{name} , #{sigungu} ,#{address} , #{address_detail} , #{location_addr} , #{lon},#{lat} , #{phone_number} , #{email} , #{regident_reg},now() , #{img1},#{img2},#{jobtype},#{gender},#{country})
+	</insert>
+	<select id="checkid" parameterType="hashMap" resultType="hashMap">
+		select count(*) as cnt from `user` where user_id = #{user_id}
+	</select>
+	<select id="checkPhoneNumber" parameterType="hashMap" resultType="hashMap">
+		select count(*) as cnt from `user` where phone_number = #{phone_number}
+	</select>
+	<select id="logstatus" parameterType="hashMap" resultType="hashMap">
+		SELECT `STATUS` as today_job_status FROM today_job c WHERE target_user_seq = #{target_user_seq}  AND user_seq =  ${user_seq}
+	</select>
+	<update id="updateMyjob" parameterType="hashMap">
+		update `user`
+		set onelinetext = #{onelinetext}
+		, rec_yn = #{rec_yn}
+		, rec_pay = #{rec_pay}
+		, rec_age = #{rec_age}
+		, rec_contry = #{rec_contry}
+		, rec_date_start = #{rec_date_start}
+		, rec_date_end = #{rec_date_end}
+		, rec_worker = #{rec_worker}
+		, `name` = #{name}
+		where seq = #{user_seq}
+	</update>
+	<select id="jobloadlist" parameterType="hashMap" resultType="hashMap">
+		select a.* , (SELECT AVG(user_score) FROM job_log WHERE user_seq = a.seq) AS score from user a
+		where a.`type` = '${type}'
+		and a.seq != '${user_seq}'
+		<if test="limit != null and limit != ''">
+			limit ${limit}
+		</if>
+	</select>
+	<select id="listLoad" parameterType="hashMap" resultType="hashMap">
+		SELECT a.* 
+		<if test="user_seq != null and user_seq != ''">
+		, (SELECT `STATUS` FROM today_job c WHERE target_user_seq = a.seq  AND user_seq =  ${user_seq}) AS `today_job_status`
+		</if>
+		<if test="target_user_seq != null and target_user_seq != ''">
+		, (SELECT `STATUS` FROM today_job c WHERE target_user_seq = ${target_user_seq}  AND user_seq =  a.seq) AS `today_job_status`
+		</if>
+		, (SELECT AVG(target_score) FROM job_log WHERE target_user_seq = a.seq) AS score
+		FROM user a
+		left OUTER JOIN job_type b
+		ON a.seq = b.user_seq
+		WHERE a.jobtype not IN (${job_type})
+		<if test="type != null and type != ''">
+		and a.`type` = '${type}'
+		</if>
+		<if test="filter != null and filter != ''">
+			AND ( 
+					(a.rec_worker = 0 
+				<if test="worker0 != null and worker0 != ''">	
+					AND a.rec_pay between ${worker0_from} AND ${worker0_to}
+				</if>	
+					)
+					OR (a.rec_worker = 1
+				<if test="worker1 != null and worker1 != ''">	 
+						AND a.rec_pay between ${worker1_from} AND ${worker1_to}
+				</if>		
+						)
+					OR (a.rec_worker = 2
+				<if test="worker2 != null and worker2 != ''">	
+					AND a.rec_pay between ${worker2_from} AND ${worker2_to}
+				</if>	
+					)
+					OR (a.rec_worker = 3 
+				<if test="worker3 != null and worker3 != ''">	
+					AND a.rec_pay between ${worker3_from} AND ${worker3_to}
+				</if>	
+					)
+				
+			)
+		</if>
+		<if test="types != null and types != ''">
+			and a.`type` not in (${types})
+		</if>
+		and a.rec_public_scope = 'true'
+		and a.lat between '${minlat}' and '${maxlat}'
+		and a.lon between '${minlon}' and '${maxlon}' 
+		GROUP BY seq
+	</select>
+	<select id="idSearch" parameterType="hashMap" resultType="hashMap">
+		select * from `user` where name = #{name} and email = #{email}
+	</select>
+	<select id="pwdSearch" parameterType="hashMap" resultType="hashMap">
+		select * from `user` where email = #{email} and phone_number = #{phone_number} limit 1
+	</select>
+	<update id="pwdinit" parameterType="hashMap">
+		update `user`
+		set user_pwd = password(#{pwd})
+		where seq = #{seq}
+	</update>
+	<select id="getJoblist" parameterType="hashMap" resultType="hashMap">
+		select b.*
+		, a.status AS `today_job_status`
+		, (SELECT AVG(target_score) FROM job_log c WHERE c.target_user_seq = a.target_user_seq) AS score
+		, a.target_user_seq
+		, a.user_seq
+		, a.create_date as log_create_date
+		from today_job a
+		left outer join `user` b
+		on b.seq = a.target_user_seq
+		<if test="user_seq != null and user_seq != ''">
+			where a.user_seq = #{user_seq}
+			and a.`status` = #{status}
+		</if>
+		<if test="target_user_seq != null and target_user_seq != ''">
+			where a.target_user_seq = #{user_seq}
+			and a.`status` = #{status}
+		</if>
+	</select>
+	<select id="getUserJoblist" parameterType="hashMap" resultType="hashMap">
+		select b.*
+		, a.status AS `today_job_status`
+		, (SELECT AVG(user_score) FROM job_log c WHERE c.user_seq = a.user_seq) AS score
+		, a.target_user_seq
+		, a.user_seq
+		, a.create_date as log_create_date
+		from today_job a
+		left outer join `user` b
+		on b.seq = a.user_seq
+		<if test="target_user_seq != null and target_user_seq != ''">
+			where a.target_user_seq = #{target_user_seq}
+			and a.`status` = #{status}
+		</if>
+	</select>
+	<select id="getJobloglist" parameterType="hashMap" resultType="hashMap">
+		select b.*
+		, a.status AS `today_job_status`
+		, a.target_score
+		, a.target_log_text
+		, a.user_score
+		, a.user_log_text
+		, a.target_user_seq
+		, a.user_seq
+		, a.create_date as log_create_date
+		from job_log a
+		left outer JOIN `user` b
+		on b.seq = a.target_user_seq
+		<if test="user_seq != null and user_seq != ''">
+			where a.user_seq = #{user_seq}
+			and a.`status` = #{status}
+		</if>
+	</select>
+	<select id="getUserJobloglist" parameterType="hashMap" resultType="hashMap">
+		select b.*
+		, a.status AS `today_job_status`
+		, a.user_score
+		, a.user_log_text
+		, a.target_user_seq
+		, a.user_seq
+		, a.create_date as log_create_date
+		from job_log a
+		left outer JOIN `user` b
+		on b.seq = a.user_seq
+		<if test="target_user_seq != null and target_user_seq != ''">
+			where a.target_user_seq = #{target_user_seq}
+			and a.`status` = #{status}
+		</if>
+	</select>
+	<update id="updateJob" parameterType="hashMap">
+		update today_job
+		set `status` = #{status}
+		where target_user_seq = #{target_user_seq}
+		and user_seq = #{user_seq}
+	</update>
+	
+	<select id="getTypelist" parameterType="hashMap" resultType="hashMap">
+		select a.*,FN_CODE(a.code , 'T') as code_name from job_type a
+		<if test="user_seq != null and user_seq != ''">
+		where a.user_seq = #{user_seq}
+		</if>
+		GROUP BY `code`
+	</select>
+	<select id="getCodeList" parameterType="hashMap" resultType="hashMap">
+	 select 
+		code 
+		, type 
+		, code_name
+	  from code 
+	  where `use` = 1
+	  and type = #{type}
+	   order by order_number;
+	</select>
+	<insert id="addTypes" parameterType="hashMap">
+		insert into job_type
+		(user_seq , code)
+		values
+		(#{user_seq} , #{code})
+	</insert>
+	<insert id="addTypesSub" parameterType="hashMap">
+		insert into job_type_sub
+		(user_seq , job_type , job_type_sub)
+		values
+		(#{user_seq} , #{job_type}, #{job_type_sub})
+	</insert>
+	<update id="updateAddress" parameterType="hashMap">
+		update `user`
+		<if test="address != null and address != ''">
+			set address = #{address}
+		</if>
+		<if test="location != null and location != ''">
+			set location_addr = #{location}
+		</if>
+		<if test="address_detail != null and address_detail != ''">
+			, address_detail = #{address_detail}
+		</if>
+		<if test="sigungu != null and sigungu != ''">
+			, sigungu = #{sigungu}
+		</if>
+		
+		<if test="lon != null and lon != ''">
+			, lon = #{lon}
+			, lat = #{lat}
+		</if>
+		where seq = #{user_seq}
+	</update>
+	<update id="updateLocation" parameterType="hashMap">
+		update `user`
+		set location_addr = #{location}
+			, lon = #{lon}
+			, lat = #{lat}
+		where seq = #{user_seq}
+	</update>
+	<update id="updatelogoImg" parameterType="hashMap">
+		update `user`
+		set logo_img = #{logo_img}
+		where seq = #{user_seq}
+	</update>
+	<delete id="memberOut" parameterType="hashMap">
+		delete from `user`
+		where seq = #{user_seq}
+	</delete>
+	<update id="updateContetns" parameterType="hashMap">
+		update `user`
+		set contents = #{contents}
+		, onelinetext = #{onelinetext}
+		where seq = #{user_seq}
+	</update>
+	<delete id="deleteType" parameterType="hashMap">
+		delete from job_type
+		where user_seq = #{user_seq}
+	</delete>
+	<delete id="deleteTypeSub" parameterType="hashMap">
+		delete from job_type_sub
+		where user_seq = #{user_seq}
+	</delete>
+	<select id="getMyinfo" parameterType="hashMap" resultType="hashMap">
+		SELECT a.*,
+		FN_CODE(a.rec_job , 'T') AS rec_job_name,
+		(IF(`type` = 'A02' , (SELECT AVG(target_score) FROM job_log b WHERE target_user_seq = a.seq) , (SELECT AVG(user_score) FROM job_log b WHERE user_seq = a.seq))) AS my_score,
+		(IF(`type` = 'A02' , (SELECT COUNT(*) FROM job_log b WHERE target_user_seq = a.seq) , (SELECT COUNT(*) FROM job_log b WHERE user_seq = a.seq))) AS my_log_count,
+		(IF(`type` = 'A02' , (SELECT COUNT(*) FROM today_job b WHERE target_user_seq = a.seq) , (SELECT COUNT(*) FROM today_job b WHERE user_seq = a.seq))) AS my_today_count
+		from user a
+		where a.seq = #{seq}
+	</select>
+	<insert id="addJob" parameterType="hashMap">
+		insert into today_job
+		(target_user_seq , user_seq , status , create_date, onelinetext, rec_date_start, rec_date_end)
+		values
+		(#{target_user_seq} , #{user_seq} , 0 , now() 
+		,(select onelinetext from user where seq = #{target_user_seq})
+		,(select rec_date_start from user where seq = #{target_user_seq})
+		,(select rec_date_end from user where seq = #{target_user_seq}))
+	</insert>
+	<delete id="cancelJob" parameterType="hashMap">
+		delete from today_job
+		where target_user_seq = #{target_user_seq}
+		and user_seq = #{user_seq}
+	</delete>
+	<!--  스케쥴러 -->
+	<insert id="joblog" parameterType="hashMap">
+		INSERT INTO job_log
+		(target_user_seq , user_seq , `status` ,create_date, onelinetext, rec_date_start, rec_date_end)
+		SELECT target_user_seq , user_seq , `status` , create_date , onelinetext, rec_date_start, rec_date_end FROM today_job
+		WHERE status = 1
+	</insert>
+	<delete id="todayjoblogclear" parameterType="hashMap">
+		delete from today_job;
+	</delete>
+	<update id="updatelogStar" parameterType="hashMap">
+		update job_log
+		set target_score = ${star}
+		, target_log_text = #{eval_text}
+		where target_user_seq = #{target_user_seq}
+		and user_seq = #{user_seq}
+		and date_format(create_date,'%Y-%m-%d') = #{create_date}
+	</update>
+	<update id="updatelogUserStar" parameterType="hashMap">
+		update job_log
+		set user_score = ${star}
+		, user_log_text = #{eval_text}
+		where target_user_seq = #{target_user_seq}
+		and user_seq = #{user_seq}
+		and date_format(create_date , '%Y-%m-%d') = #{create_date}
+	</update>
+	<update id="updateName" parameterType="hashMap">
+		update `user`
+		set name = #{name}
+		where seq = #{user_seq}
+	</update>
+	<select id="getCheckPwd" parameterType="hashMap" resultType="hashMap">
+		select count(*) as cnt
+		from `user`
+		where user_pwd = password(#{pwd})
+		and seq = #{seq}
+	</select>
+	<update id="updateMemberinfo" parameterType="hashMap">
+		update `user`
+		set phone_number = '${phone_number}'
+		, address = '${address}'
+		, address_detail = '${address_detail}'
+		, lon = '${lon}'
+		, lat = '${lat}'
+		, location_addr = '${location_addr}'
+		, gender = '${gender}'
+		, rec_contry = '${rec_contry}'
+		where seq = '${seq}'
+	</update>
+	<update id="saveRec" parameterType="hashMap">
+		update `user`
+		set onelinetext = '${onelinetext}'
+		,rec_name = '${rec_name}'
+		,rec_job = '${rec_job}'
+		,rec_detail_job = '${rec_detail_job}'
+		,rec_pay = '${rec_pay}'
+		,rec_pay_sub = '${rec_pay_sub}'
+		,rec_date_time = '${rec_date_time}'
+		,rec_date_start = '${rec_date_start}'
+		,rec_date_end = '${rec_date_end}'
+		,rec_gender = '${rec_gender}'
+		,rec_contry = '${rec_contry}'
+		,rec_age = '${rec_age}'
+		,location_addr = '${location_addr}'
+		,lon = '${lon}'
+		,lat = '${lat}'
+		,rec_phone_number = '${rec_phone_number}'
+		,rec_detail = '${rec_detail}'
+		,rec_req = '${rec_req}'
+		,rec_public_scope = '${rec_public_scope}'
+	where seq = '${seq}'	
+	</update>
+	<insert id="saveCal" parameterType="hashMap">
+		insert into calendar
+		(seq, year, month, day, user_title, user_contents, user_date)
+		values
+		(#{seq}, #{year}, #{month}, #{day}, #{user_title}, #{user_contents}
+		, concat(#{year},'-',#{month},'-',#{day}))
+	</insert>
+	<select id="setCalLoadList" parameterType="hashMap" resultType="hashMap">
+		select *
+		from calendar
+		where seq = '${seq}' and user_date between concat(#{year},'-',#{month},'-01') and concat(#{year},'-',#{month},'-31')
+	</select>
+	<select id="calLoadList" parameterType="hashMap" resultType="hashMap">
+		select user_title, user_contents, term
+		from calendar
+		where seq = '${seq}' and concat(#{year},'-',#{month},'-',#{day}) = user_date
+	</select>
+	<select id="calJobList" parameterType="hashMap" resultType="hashMap">
+		select onelinetext
+		from job_log
+		where target_user_seq = '${seq}' and concat(#{year},'-',#{month},'-',#{day}) between rec_date_start and rec_date_end and status=1
+	</select>
+	<select id="setJobList" parameterType="hashMap" resultType="hashMap">
+		select onelinetext, date_format(rec_date_start, '%m') as start_month, date_format(rec_date_start, '%d') as start_day
+		, date_format(rec_date_end, '%m') as end_month, date_format(rec_date_end, '%d') as end_day
+		, date_format(rec_date_start, '%Y') as start_year, date_format(rec_date_end, '%Y') as end_year
+		, date_format(rec_date_end, '%m') - date_format(rec_date_start, '%m') as diff
+		from job_log
+		where target_user_seq = '${seq}' AND (concat(#{year},'-',#{month},'-01') between rec_date_start and rec_date_end or concat(#{year},'-',#{month},'-31') between rec_date_start and rec_date_end
+		or date_format(rec_date_start, '%m') = #{month})
+	</select>
+	<select id="caltjList" parameterType="hashMap" resultType="hashMap">
+		select onelinetext
+		from today_job
+		where target_user_seq = '${seq}' and concat(#{year},'-',#{month},'-',#{day}) between rec_date_start and rec_date_end and status=1
+	</select>
+	<select id="settjList" parameterType="hashMap" resultType="hashMap">
+		select onelinetext, date_format(rec_date_start, '%m') as start_month, date_format(rec_date_start, '%d') as start_day
+		, date_format(rec_date_end, '%m') as end_month, date_format(rec_date_end, '%d') as end_day
+		, date_format(rec_date_start, '%Y') as start_year, date_format(rec_date_end, '%Y') as end_year
+		, date_format(rec_date_end, '%m') - date_format(rec_date_start, '%m') as diff
+		from today_job
+		where target_user_seq = '${seq}' AND (concat(#{year},'-',#{month},'-01') between rec_date_start and rec_date_end or concat(#{year},'-',#{month},'-31') between rec_date_start and rec_date_end
+		or date_format(rec_date_start, '%m') = #{month})
+	</select>
+	<update id="updateCal" parameterType="hashMap">
+		update calendar
+		set user_title = '${user_title}'
+		, user_contents = '${user_contents}'
+		where seq = #{seq} and term = #{term}
+	</update>
+	<delete id="deleteCal" parameterType="hashMap">
+		delete from calendar
+		where seq = #{seq} and term = #{term}
+	</delete>
+	<insert id="addBoard" parameterType="hashMap">
+		insert into board
+		(seq, name, email, title, contents, date)
+		values
+		(#{seq}, #{name}, #{email}, #{title}, #{contents}, DATE_ADD(now(), INTERVAL 9 HOUR))
+	</insert>
+	<select id="getBoardList" parameterType="hashMap" resultType="hashMap">
+		select term, seq, name, email, title, contents, date_format(date, '%Y-%m-%d') as dater, views, comment
+		from board
+		order by date desc
+	</select>
+	<select id="getBoardView" parameterType="hashMap" resultType="hashMap">
+		select *, date_format(date, '%Y-%m-%d') as dater
+		from board
+		where term = #{term}
+	</select>
+	<update id="updateBoard" parameterType="hashMap">
+		update board
+		set views = views + 1
+		where term = #{term}
+	</update>
+	<insert id="saveCom" parameterType="hashMap">
+		insert into comment
+		(term, name, date, contents, type)
+		values
+		(#{term}, (select name from user where seq = #{seq}), DATE_ADD(now(), INTERVAL 9 HOUR), #{contents}, #{type})
+	</insert>
+	<select id="getCommentList" parameterType="hashMap" resultType="hashMap">
+		select *, date_format(date, '%Y-%m-%d %H:%i') as dater
+		from comment
+		where term = #{term}
+		order by date desc
+	</select>
+	<insert id="saveReCom" parameterType="hashMap">
+		insert into comment
+		(term, name, date, contents, type)
+		values
+		(#{term}, (select name from user where seq = #{seq}), DATE_ADD(now(), INTERVAL 9 HOUR), #{contents}, #{type})
+	</insert>
+	<update id="updateComment" parameterType="hashMap">
+		update board
+		set comment = (select count(*) from comment where term = #{term})
+		where term = #{term}
+	</update>
+	<select id="getKeyward" parameterType="hashMap" resultType="hashMap">
+		select *, date_format(date, '%Y-%m-%d') as dater
+		from board
+		where title like concat('%',#{keyward},'%')
+		order by date desc
+	</select>
+</mapper>
+	

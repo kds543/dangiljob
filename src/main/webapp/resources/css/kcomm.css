@@ -1,0 +1,29 @@
+body{
+  -webkit-print-color-adjust:exact;
+   
+}
+		 .table {border-collapse:collapse;border-spacing:0; border-color:#000000;border:0.5px solid;padding:0px; font-size : 10px;}
+		 td {
+  text-align: center;
+   vertical-align: middle !important;
+  border-color:#000000;
+  color:#000000;
+  text-align:center !important;
+overflow:hidden;
+word-break:normal;
+}
+th {
+    vertical-align: middle !important;
+  text-align: center !important;
+  color:#000000;
+  border-color:#000000;
+ overflow:hidden;
+ word-break:normal;
+}
+.fc-widget-header{
+    background-color:#fffc9e;
+}
+@media print {
+body {-webkit-print-color-adjust: exact;}
+}
+tg-qwsy{background-color:#32cb00;border-color:#000000;text-align:center !important}

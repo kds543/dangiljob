@@ -1,0 +1,18 @@
+body{
+  -webkit-print-color-adjust:exact;
+   
+}
+		 .table {border-collapse:collapse;border-spacing:0; padding:0px;margin-bottom: 0px !important; }
+ 
+		 th { white-space: nowrap; }
+th {
+    vertical-align: middle !important;
+  text-align: center !important;
+ overflow:hidden;
+ word-break:normal;
+}
+td {
+    vertical-align: middle !important;
+  text-align: center !important;
+}
+tg-qwsy{background-color:#32cb00;border-color:#000000;text-align:center !important}

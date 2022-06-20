@@ -1,0 +1,38 @@
+.fc-widget-header{
+    background-color:#1ab394 !important;
+    color:#ffffff !important;
+   	min-height:28px;
+}
+.fc-day-header{
+	min-height:30px;
+	padding-top:5px !important;
+	color:#ffffff !important;
+}
+.fc-view-container{
+	color:#ffffff !important;
+}
+	@media print { 
+ .div { 
+    -webkit-print-color-adjust: exact; 
+    color : #ffffff !important;
+   } 
+   .fc-widget-header{
+    background-color:#1ab394 !important;
+    color:#ffffff !important;
+   	min-height:28px;
+}
+.fc-day-header{
+	min-height:30px;
+	padding-top:5px !important;
+	color:#ffffff !important;
+}
+.fc-view-container{
+	color:#ffffff !important;
+}
+}
+.fc-view-container{
+	height : 600px !important;
+}
+.th{
+	color : #ffffff !important;
+}
